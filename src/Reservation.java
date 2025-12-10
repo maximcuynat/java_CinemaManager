@@ -1,36 +1,82 @@
-public class Reservation {
+import java.util.ArrayList;
+
+public class Reservation
+{
+    // -------------------------------------------------------------------------------------- Attributs
     private int idReservation;
     private Person holder;
-    private Person[] others;
+    private ArrayList<Person> others;
 
+    // -------------------------------------------------------------------------------------- Constructeurs
+    /**
+     * Constructeur avec seulement un Holder
+     * @param holder
+     */
     Reservation(Person holder){
-        this.holder = holder;
+        setHolder(holder);
+        this.others = new ArrayList<>();
     }
 
-    Reservation(Person holder, Person[] others){
-        this.holder = holder;
+    /**
+     * Constructeur avec Others
+     * @param holder
+     * @param others
+     */
+    Reservation(Person holder, ArrayList<Person> others){
+        setHolder(holder);
         this.others = others;
     }
 
-    public void addPersonToReservation(Person person)
-    {
-        if (this.others == null){
-            // Si le tableau est vide, créer un tableau de taille 1
-            this.others = new Person[1];
-            this.others[0] = person;
-        } else {
-            Person[] newOthers = new Person[this.others.length + 1];
-
-            // Copier les anciens
-            for(int i = 0; i < this.others.length; i++) {
-                newOthers[i] = this.others[i];
-            }
-
-            // Ajouter la nouvelle personne
-            newOthers[this.others.length] = person;
-
-            // Remplacer l'ancien tableau
-            this.others = newOthers;
-        }
+    // -------------------------------------------------------------------------------------- Fonctions
+    /**
+     * Ajouter une personne à une réservation
+     * @param person
+     * @param seat
+     * @param isPmr
+     */
+    public void addPersonToReservation(Person person, int[] seat, boolean isPmr){
+        person.saveSeat(seat);
+        this.others.add(person);
     }
+
+    //TODO Fonction pour changer le Holder
+
+    //TODO Fonction pour changer de place une personne
+
+    //TODO Fonction pour supprimer une personne d'une réservation
+
+    // -------------------------------------------------------------------------------------- Setter
+    /**
+     * Assigner un id de réservation
+     * @param id
+     */
+    private void setIdReservation(int id){
+        this.idReservation = id;
+    }
+
+    /**
+     * Definir le prpriétaire de la réservation
+     * @param holder
+     */
+    private void setHolder(Person holder){
+        this.holder = holder;
+    }
+
+    /**
+     * Définir les autre personnes attaché à la réservation
+     * @param others
+     */
+    private void setOthers(ArrayList<Person> others){
+        this.others = others;
+    }
+
+    // -------------------------------------------------------------------------------------- Getters
+    /**
+     * Renvoyer la liste des autre personne de la réservation
+     * @return
+     */
+    public ArrayList<Person> getOthers(){
+        return this.others;
+    }
+
 }
