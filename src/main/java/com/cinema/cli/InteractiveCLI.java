@@ -10,15 +10,32 @@ public class InteractiveCLI {
     private Scanner scanner;
 
     public InteractiveCLI() {
-        this.cinema = new Cinema("Nouveau Cinéma");
+        this.cinema = new Cinema("Pathé Plan de Campagne");
         this.scanner = new Scanner(System.in);
     }
 
+    // ==== AJOUT : Nettoyage de la console ====
+    private void clearConsole() {
+        try {
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception e) {
+            // Méthode fallback : scroll
+            for (int i = 0; i < 50; i++) System.out.println();
+        }
+    }
+
     public void start() {
+        clearConsole();
         System.out.println("=== Bienvenue dans le système de gestion de cinéma ===");
 
         boolean running = true;
         while (running) {
+            clearConsole();
             displayMainMenu();
             int choice = getIntInput("Choisissez une option : ");
 
@@ -71,12 +88,14 @@ public class InteractiveCLI {
     private void manageRooms() {
         boolean back = false;
         while (!back) {
+            clearConsole();
             System.out.println("\n=== Gestion des Salles ===");
             System.out.println("1. Créer une salle");
             System.out.println("2. Afficher les salles");
             System.out.println("3. Supprimer une salle");
             System.out.println("0. Retour");
             int choice = getIntInput("Choisissez une option : ");
+
             switch (choice) {
                 case 1:
                     createRoom();
@@ -99,11 +118,13 @@ public class InteractiveCLI {
     private void manageSeances() {
         boolean back = false;
         while (!back) {
+            clearConsole();
             System.out.println("\n=== Gestion des Séances ===");
             System.out.println("1. Créer une séance");
             System.out.println("2. Afficher les séances");
             System.out.println("0. Retour");
             int choice = getIntInput("Choisissez une option : ");
+
             switch (choice) {
                 case 1:
                     createSeance();
@@ -235,9 +256,7 @@ public class InteractiveCLI {
         }
 
         List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) {
-            allSeances.addAll(room.getSeances());
-        }
+        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
 
         if (seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
@@ -284,9 +303,7 @@ public class InteractiveCLI {
         }
 
         List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) {
-            allSeances.addAll(room.getSeances());
-        }
+        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
 
         if (seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
@@ -322,9 +339,7 @@ public class InteractiveCLI {
         }
 
         List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) {
-            allSeances.addAll(room.getSeances());
-        }
+        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
 
         if (seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
@@ -360,18 +375,6 @@ public class InteractiveCLI {
         } else {
             displayTable(new String[]{"ID", "Film", "Date", "Heure", "Salle"}, rows);
         }
-    }
-
-    private String getSeatStringFromReservation(Reservation reservation) {
-        StringBuilder seatString = new StringBuilder();
-        seatString.append(Arrays.toString(reservation.getHolder().getSeat())).append(", ");
-        for (Person person : reservation.getOthers()) {
-            seatString.append(Arrays.toString(person.getSeat())).append(", ");
-        }
-        if (seatString.length() > 0) {
-            seatString.setLength(seatString.length() - 2); // Supprime la dernière virgule
-        }
-        return seatString.toString();
     }
 
     private void displayReservationHistory() {
@@ -412,19 +415,18 @@ public class InteractiveCLI {
             }
         }
 
-        // Afficher l'en-tête
         System.out.print("+");
         for (int width : columnWidths) {
             System.out.print("-".repeat(width + 2) + "+");
         }
         System.out.println();
+
         System.out.print("|");
         for (int i = 0; i < headers.length; i++) {
             System.out.printf(" %-" + columnWidths[i] + "s |", headers[i]);
         }
         System.out.println();
 
-        // Afficher les lignes
         for (String[] row : rows) {
             System.out.print("+");
             for (int width : columnWidths) {
@@ -437,6 +439,7 @@ public class InteractiveCLI {
             }
             System.out.println();
         }
+
         System.out.print("+");
         for (int width : columnWidths) {
             System.out.print("-".repeat(width + 2) + "+");
@@ -448,11 +451,11 @@ public class InteractiveCLI {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
             System.out.println("Entrée invalide. Veuillez entrer un nombre.");
-            scanner.next(); // Consomme l'entrée invalide
+            scanner.next();
             System.out.print(prompt);
         }
         int input = scanner.nextInt();
-        scanner.nextLine(); // Consomme la nouvelle ligne
+        scanner.nextLine();
         return input;
     }
 
