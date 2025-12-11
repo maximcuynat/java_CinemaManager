@@ -19,19 +19,21 @@ Ce projet contient maintenant une suite complète de tests unitaires avec **JUni
 
 ```
 src/
-├── main/java/com/cinema/
-│   ├── Main.java
-│   ├── models/
-│   │   ├── Cinema.java
-│   │   ├── Person.java
-│   │   ├── Reservation.java
-│   │   ├── Room.java
-│   │   └── Seance.java
-│   ├── interfaces/
-│   │   └── Reservable.java
-│   └── enums/
-│       └── SeatType.java
-└── test/java/com/cinema/models/
+└── main/java/com/cinema/
+    ├── Main.java
+    ├── models/
+    │   ├── Cinema.java
+    │   ├── Person.java
+    │   ├── Reservation.java
+    │   ├── Room.java
+    │   └── Seance.java
+    ├── interfaces/
+    │   └── Reservable.java
+    └── enums/
+        └── SeatType.java
+
+test/
+└── com/cinema/models/
     ├── CinemaTest.java
     ├── PersonTest.java
     ├── ReservationTest.java
@@ -77,7 +79,7 @@ javac -d bin src/main/java/com/cinema/*.java \
 
 # 3. Compiler les tests
 javac -cp "bin:lib/junit-platform-console-standalone-1.10.1.jar" \
-  -d bin src/test/java/com/cinema/models/*.java
+  -d bin test/com/cinema/models/*.java
 
 # 4. Exécuter les tests
 java -jar lib/junit-platform-console-standalone-1.10.1.jar \
