@@ -18,10 +18,11 @@ public class PersonTest {
     @Test
     @DisplayName("Le constructeur par défaut initialise correctement les champs")
     void testDefaultConstructor() {
-        assertEquals("", person.getPerson().split(" - ")[0]);
-        assertEquals("", person.getPerson().split(" - ")[1]);
+        assertEquals(" - ", person.getPerson());
         assertNotNull(person.getPlace());
         assertEquals(2, person.getPlace().length);
+        assertEquals(0, person.getPlace()[0]);
+        assertEquals(0, person.getPlace()[1]);
     }
 
     @Test
