@@ -40,7 +40,20 @@ public class Person {
         return this.firstName + " - " + this.lastName;
     }
 
+    public String getFirstName() {
+        return this.firstName;
+    }
+
+    public String getLastName() {
+        return this.lastName;
+    }
+
     public int[] getPlace() {
+        return this.place;
+    }
+
+    // Ajoutez cette méthode pour obtenir le siège
+    public int[] getSeat() {
         return this.place;
     }
 }
