@@ -264,18 +264,69 @@ public class InteractiveCLI {
         }
 
         Seance selectedSeance = allSeances.get(seanceIndex);
-        selectedSeance.displaySeatMap();
-        int row = getIntInput("Entrez la ligne du siège : ");
-        int col = getIntInput("Entrez la colonne du siège : ");
-        SeatType type = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
 
-        Person person = createPerson();
-        Reservation reservation = new Reservation(person);
+        // Demander le nombre de personnes
+        int numberOfPeople = getIntInput("Combien de personnes pour cette réservation ? ");
+        if (numberOfPeople < 1) {
+            System.out.println("Le nombre de personnes doit être au moins 1.");
+            return;
+        }
+
+        // Créer la personne principale (holder)
+        System.out.println("\n--- Personne principale (titulaire de la réservation) ---");
+        Person holder = createPerson();
+
+        selectedSeance.displaySeatMap();
+        int row = getIntInput("Entrez la ligne du siège pour " + holder.getFirstName() + " : ");
+        int col = getIntInput("Entrez la colonne du siège pour " + holder.getFirstName() + " : ");
+        SeatType type = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+        int[] holderSeat = new int[]{row, col};
 
         try {
-            selectedSeance.reserve(new int[]{row, col}, type);
+            // Réserver le siège du titulaire
+            selectedSeance.reserve(holderSeat, type);
+            holder.saveSeat(holderSeat);
+
+            // Créer la réservation avec le titulaire
+            Reservation reservation = new Reservation(holder);
+
+            // Ajouter les autres personnes si nécessaire
+            for (int i = 2; i <= numberOfPeople; i++) {
+                System.out.println("\n--- Personne " + i + " ---");
+                Person additionalPerson = createPerson();
+
+                selectedSeance.displaySeatMap();
+                int additionalRow = getIntInput("Entrez la ligne du siège pour " + additionalPerson.getFirstName() + " : ");
+                int additionalCol = getIntInput("Entrez la colonne du siège pour " + additionalPerson.getFirstName() + " : ");
+                SeatType additionalType = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+                int[] additionalSeat = new int[]{additionalRow, additionalCol};
+
+                try {
+                    // Réserver le siège
+                    selectedSeance.reserve(additionalSeat, additionalType);
+                    // Ajouter la personne à la réservation
+                    reservation.addPersonToReservation(additionalPerson, additionalSeat, additionalType == SeatType.PMR);
+                    System.out.println("Siège réservé pour " + additionalPerson.getFirstName() + " " + additionalPerson.getLastName() + " !");
+                } catch (Exception e) {
+                    System.out.println("Erreur pour " + additionalPerson.getFirstName() + " : " + e.getMessage());
+                    // Note: les sièges précédemment réservés restent réservés
+                }
+            }
+
+            // Ajouter la réservation à la séance
             selectedSeance.addReservation(reservation);
-            System.out.println("Siège réservé avec succès pour " + person.getFirstName() + " " + person.getLastName() + " !");
+
+            System.out.println("\n=== Réservation complète ===");
+            System.out.println("Réservation créée avec succès pour " + numberOfPeople + " personne(s) !");
+            System.out.println("Titulaire : " + holder.getFirstName() + " " + holder.getLastName());
+            if (reservation.getOthers().size() > 0) {
+                System.out.println("Invités : ");
+                for (Person guest : reservation.getOthers()) {
+                    System.out.println("  - " + guest.getFirstName() + " " + guest.getLastName());
+                }
+            }
+            System.out.println("Sièges : " + reservation.getSeatString());
+
         } catch (Exception e) {
             System.out.println("Erreur : " + e.getMessage());
         }
@@ -384,11 +435,32 @@ public class InteractiveCLI {
         for (Room room : cinema.getRooms()) {
             for (Seance seance : room.getSeances()) {
                 for (Reservation reservation : seance.getReservations()) {
+                    // Construire la liste des noms
+                    StringBuilder names = new StringBuilder();
+                    names.append(reservation.getHolder().getFirstName())
+                         .append(" ")
+                         .append(reservation.getHolder().getLastName())
+                         .append(" (Titulaire)");
+
+                    // Ajouter les invités
+                    if (!reservation.getOthers().isEmpty()) {
+                        for (Person guest : reservation.getOthers()) {
+                            names.append(", ")
+                                 .append(guest.getFirstName())
+                                 .append(" ")
+                                 .append(guest.getLastName());
+                        }
+                    }
+
+                    // Nombre total de personnes
+                    int totalPeople = 1 + reservation.getOthers().size();
+
                     rows.add(new String[]{
                             seance.getMovie(),
                             seance.getDate() + " " + seance.getTime(),
                             room.getName(),
-                            reservation.getHolder().getFirstName() + " " + reservation.getHolder().getLastName(),
+                            String.valueOf(totalPeople),
+                            names.toString(),
                             reservation.getSeatString()
                     });
                 }
@@ -398,7 +470,7 @@ public class InteractiveCLI {
         if (rows.isEmpty()) {
             System.out.println("Aucune réservation trouvée.");
         } else {
-            displayTable(new String[]{"Film", "Date et Heure", "Salle", "Nom", "Siège"}, rows);
+            displayTable(new String[]{"Film", "Date et Heure", "Salle", "Nb Pers.", "Noms", "Sièges"}, rows);
         }
     }
 
