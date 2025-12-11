@@ -1,18 +1,22 @@
 package com.cinema.models;
 
+import java.util.ArrayList;
+
 public class Room {
     private String name;
-    private Seance[] seances;
+    private ArrayList<Seance> seances;
     private char[][] roomSeatMap;
 
     public Room(String name) {
         this.name = name;
+        this.seances = new ArrayList<>();
         this.roomSeatMap = new char[5][10];
         initializeDefaultLayout();
     }
 
     public Room(String name, char[][] customLayout) {
         this.name = name;
+        this.seances = new ArrayList<>();
         this.roomSeatMap = cloneSeatMap(customLayout);
     }
 
@@ -73,46 +77,18 @@ public class Room {
     }
 
     public void addSeance(Seance seance) {
-        if (this.seances == null) {
-            this.seances = new Seance[1];
-            this.seances[0] = seance;
-        } else {
-            Seance[] newSeance = new Seance[this.seances.length + 1];
-            for (int i = 0; i < this.seances.length; i++) {
-                newSeance[i] = this.seances[i];
-            }
-            newSeance[this.seances.length] = seance;
-            this.seances = newSeance;
-        }
+        this.seances.add(seance);
     }
 
     public void removeSeance(Seance seance) {
-        if (this.seances == null) return;
-
-        int index = -1;
-        for (int i = 0; i < this.seances.length; i++) {
-            if (this.seances[i] == seance) {
-                index = i;
-                break;
-            }
-        }
-
-        if (index == -1) return;
-
-        Seance[] newSeances = new Seance[this.seances.length - 1];
-        for (int i = 0, j = 0; i < this.seances.length; i++) {
-            if (i != index) {
-                newSeances[j++] = this.seances[i];
-            }
-        }
-        this.seances = newSeances;
+        this.seances.remove(seance);
     }
 
     private void setName(String name) {
         this.name = name;
     }
 
-    private void setSeance(Seance[] seances) {
+    private void setSeances(ArrayList<Seance> seances) {
         this.seances = seances;
     }
 
@@ -120,7 +96,7 @@ public class Room {
         return this.name;
     }
 
-    public Seance[] getSeances() {
+    public ArrayList<Seance> getSeances() {
         return this.seances;
     }
 
