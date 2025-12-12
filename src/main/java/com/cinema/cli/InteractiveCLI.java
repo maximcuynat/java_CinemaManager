@@ -2,6 +2,7 @@ package com.cinema.cli;
 
 import com.cinema.models.*;
 import com.cinema.enums.SeatType;
+import com.cinema.utils.RoomBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -290,9 +291,64 @@ public class InteractiveCLI {
             return;
         }
 
-        Room room = new Room(name);
+        System.out.println("\nType de salle :");
+        System.out.println("1. Salle simple (par défaut 5x10)");
+        System.out.println("2. Salle rectangulaire personnalisée");
+        System.out.println("3. Salle trapézoïdale (plus large au fond)");
+        System.out.println("4. Salle en arc (comme les vrais cinémas)");
+        System.out.println("5. Construction interactive (ligne par ligne)");
+
+        int choice = getIntInput("Choisissez le type : ");
+        Room room;
+
+        switch (choice) {
+            case 1:
+                // Salle par défaut
+                room = new Room(name);
+                break;
+            case 2:
+                // Rectangulaire personnalisée
+                int rows = getIntInput("Nombre de rangées : ");
+                int cols = getIntInput("Nombre de colonnes : ");
+                char[][] rectLayout = RoomBuilder.createRectangular(rows, cols);
+                room = new Room(name, rectLayout);
+                break;
+            case 3:
+                // Trapézoïdale
+                int trapRows = getIntInput("Nombre de rangées : ");
+                int minWidth = getIntInput("Largeur minimale (devant) : ");
+                int maxWidth = getIntInput("Largeur maximale (fond) : ");
+                char[][] trapLayout = RoomBuilder.createTrapezoid(trapRows, minWidth, maxWidth);
+                room = new Room(name, trapLayout);
+                break;
+            case 4:
+                // En arc
+                int arcRows = getIntInput("Nombre de rangées : ");
+                int centerWidth = getIntInput("Largeur centrale : ");
+                char[][] arcLayout = RoomBuilder.createArched(arcRows, centerWidth);
+                room = new Room(name, arcLayout);
+                break;
+            case 5:
+                // Interactive
+                RoomBuilder builder = new RoomBuilder();
+                builder.buildInteractive(scanner);
+                builder.preview();
+
+                if (confirmAction("Confirmer cette configuration ?")) {
+                    char[][] customLayout = builder.build();
+                    room = new Room(name, customLayout);
+                } else {
+                    System.out.println("Création annulée.");
+                    return;
+                }
+                break;
+            default:
+                System.out.println("Choix invalide, salle par défaut créée.");
+                room = new Room(name);
+        }
+
         currentCinema.addRoom(room);
-        System.out.println("Salle '" + name + "' créée avec succès !");
+        System.out.println("✓ Salle '" + name + "' créée avec succès !");
     }
 
     private void displayRooms() {
