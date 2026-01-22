@@ -7,51 +7,90 @@ public class Cinema {
     private ArrayList<Room> rooms;
 
     public Cinema(String name) {
-        setName(name);
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom du cinéma ne peut pas être vide");
+        }
+        this.name = name.trim();
         this.rooms = new ArrayList<>();
     }
 
-    public void reName(String newName) {
-        this.name = newName;
+    public void rename(String newName) {
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nouveau nom ne peut pas être vide");
+        }
+        this.name = newName.trim();
     }
 
     public void addRoom(Room room) {
-        this.rooms.add(room);
+        if (room == null) {
+            throw new IllegalArgumentException("La salle ne peut pas être null");
+        }
+        if (!rooms.contains(room)) {
+            rooms.add(room);
+        }
     }
 
-    public void addRooms(ArrayList<Room> rooms) {
-        setRooms(rooms);
+    public void addRooms(ArrayList<Room> newRooms) {
+        if (newRooms == null) {
+            throw new IllegalArgumentException("La liste de salles ne peut pas être null");
+        }
+        for (Room room : newRooms) {
+            addRoom(room);
+        }
+    }
+
+    public void removeRoom(Room room) {
+        rooms.remove(room);
+    }
+
+    public Room getRoomByName(String name) {
+        for (Room room : rooms) {
+            if (room.getName().equalsIgnoreCase(name)) {
+                return room;
+            }
+        }
+        return null;
     }
 
     public void displayAllRooms() {
-        if (this.rooms.isEmpty()) {
+        if (rooms.isEmpty()) {
             System.out.println("Aucune salle dans ce cinéma");
             return;
         }
 
-        System.out.println("Salles du cinéma :" + this.name + ":");
-        for (Room room : this.rooms) {
-            System.out.println(" - " + room.getName());
+        System.out.println("Salles du cinéma " + name + ":");
+        for (Room room : rooms) {
+            System.out.println(" - " + room.getName() + " (" + room.getSeances().size() + " séance(s))");
         }
     }
 
     public int getRoomCount() {
-        return this.rooms.size();
+        return rooms.size();
     }
 
-    private void setName(String name) {
-        this.name = name;
+    public int getTotalSeances() {
+        int total = 0;
+        for (Room room : rooms) {
+            total += room.getSeances().size();
+        }
+        return total;
     }
 
-    private void setRooms(ArrayList<Room> rooms) {
-        this.rooms = rooms;
+    public int getTotalReservations() {
+        int total = 0;
+        for (Room room : rooms) {
+            for (Seance seance : room.getSeances()) {
+                total += seance.getReservations().size();
+            }
+        }
+        return total;
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public ArrayList<Room> getRooms() {
-        return this.rooms;
+        return new ArrayList<>(rooms);
     }
 }

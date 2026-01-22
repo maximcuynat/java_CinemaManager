@@ -3,11 +3,7 @@ package com.cinema.models;
 import com.cinema.interfaces.Reservable;
 import com.cinema.enums.SeatType;
 import java.util.ArrayList;
-import java.util.Objects;
 
-/**
- * Représente une séance de cinéma, avec gestion des réservations et des sièges.
- */
 public class Seance implements Reservable {
     private String date;
     private String time;
@@ -16,33 +12,18 @@ public class Seance implements Reservable {
     private final ArrayList<Reservation> reservations;
     private char[][] seatMap;
 
-    /**
-     * Exception personnalisée pour les erreurs de réservation.
-     */
     public static class SeatReservationException extends Exception {
         public SeatReservationException(String message) {
             super(message);
         }
     }
 
-    /**
-     * Exception personnalisée pour les erreurs d'annulation.
-     */
     public static class SeatCancellationException extends Exception {
         public SeatCancellationException(String message) {
             super(message);
         }
     }
 
-    /**
-     * Constructeur de la classe Seance.
-     *
-     * @param date  Date de la séance.
-     * @param time  Heure de la séance.
-     * @param movie Film projeté.
-     * @param room  Salle de cinéma.
-     * @throws IllegalArgumentException Si les paramètres sont invalides.
-     */
     public Seance(String date, String time, String movie, Room room) {
         if (date == null || time == null || movie == null || room == null) {
             throw new IllegalArgumentException("Aucun paramètre ne peut être null.");
@@ -55,38 +36,66 @@ public class Seance implements Reservable {
         this.seatMap = cloneSeatMap(room.getRoomSeatMap());
     }
 
-    /**
-     * Ajoute une réservation à la liste.
-     *
-     * @param reservation Réservation à ajouter.
-     * @throws IllegalArgumentException Si la réservation est null.
-     */
     public void addReservation(Reservation reservation) {
         if (reservation == null) {
             throw new IllegalArgumentException("La réservation ne peut pas être null.");
         }
-        this.reservations.add(reservation);
+        reservations.add(reservation);
     }
 
-    /**
-     * Supprime une réservation de la liste.
-     *
-     * @param reservation Réservation à supprimer.
-     * @throws IllegalArgumentException Si la réservation est null.
-     */
     public void removeReservation(Reservation reservation) {
         if (reservation == null) {
             throw new IllegalArgumentException("La réservation ne peut pas être null.");
         }
-        this.reservations.remove(reservation);
+        reservations.remove(reservation);
     }
 
-    /**
-     * Clone la carte des sièges pour éviter les modifications externes.
-     *
-     * @param template Carte des sièges à cloner.
-     * @return Une copie de la carte des sièges.
-     */
+    public void cancelReservation(Reservation reservation) throws SeatCancellationException {
+        if (reservation == null) {
+            throw new IllegalArgumentException("La réservation ne peut pas être null.");
+        }
+
+        ArrayList<int[]> seats = reservation.getSeats();
+        for (int[] seat : seats) {
+            SeatType type = determineSeatType(seat[0], seat[1]);
+            cancel(seat, type);
+        }
+
+        for (Person person : reservation.getAllPeople()) {
+            person.clearSeat();
+        }
+
+        reservations.remove(reservation);
+    }
+
+    public Reservation findReservationBySeat(int row, int col) {
+        for (Reservation reservation : reservations) {
+            for (int[] seat : reservation.getSeats()) {
+                if (seat[0] == row && seat[1] == col) {
+                    return reservation;
+                }
+            }
+        }
+        return null;
+    }
+
+    private SeatType determineSeatType(int row, int col) {
+        if (row < 0 || row >= seatMap.length || col < 0 || col >= seatMap[0].length) {
+            return SeatType.NORMAL;
+        }
+
+        char current = seatMap[row][col];
+        if (current == 'O') {
+            char[][] template = room.getRoomSeatMap();
+            char original = template[row][col];
+
+            if (original == 'P') return SeatType.PMR;
+            if (original == 'D') return SeatType.DOUBLE;
+        }
+
+        return SeatType.NORMAL;
+    }
+
     private char[][] cloneSeatMap(char[][] template) {
         char[][] clone = new char[template.length][];
         for (int i = 0; i < template.length; i++) {
@@ -95,12 +104,9 @@ public class Seance implements Reservable {
         return clone;
     }
 
-    /**
-     * Affiche la carte des sièges avec légende.
-     */
     public void displaySeatMap() {
-        System.out.println("\n=== Séance: " + this.movie + " - " + this.date + " " + this.time + " ===");
-        System.out.println("Salle: " + this.room.getName());
+        System.out.println("\n=== Séance: " + movie + " - " + date + " " + time + " ===");
+        System.out.println("Salle: " + room.getName());
         System.out.println();
         System.out.print("    ");
         for (int col = 0; col < seatMap[0].length; col++) {
@@ -121,17 +127,9 @@ public class Seance implements Reservable {
         System.out.println("  P = PMR (libre)");
         System.out.println("  D = Place double (libre)");
         System.out.println("  x = Continuation place double");
-        System.out.println("\nRéservations actives: " + this.reservations.size());
+        System.out.println("\nRéservations actives: " + reservations.size());
     }
 
-    /**
-     * Réserve un siège pour un type donné.
-     *
-     * @param seat Coordonnées du siège.
-     * @param type Type de siège.
-     * @throws SeatReservationException Si la réservation échoue.
-     * @throws IllegalArgumentException Si le siège est invalide.
-     */
     @Override
     public void reserve(int[] seat, SeatType type) throws SeatReservationException {
         if (seat == null || seat.length != 2) {
@@ -143,14 +141,6 @@ public class Seance implements Reservable {
         applyReservation(seat[0], seat[1], type);
     }
 
-    /**
-     * Annule la réservation d'un siège.
-     *
-     * @param seat Coordonnées du siège.
-     * @param type Type de siège.
-     * @throws SeatCancellationException Si l'annulation échoue.
-     * @throws IllegalArgumentException Si le siège est invalide.
-     */
     @Override
     public void cancel(int[] seat, SeatType type) throws SeatCancellationException {
         if (seat == null || seat.length != 2) {
@@ -162,14 +152,6 @@ public class Seance implements Reservable {
         applyCancellation(seat[0], seat[1], type);
     }
 
-    /**
-     * Vérifie si un siège peut être réservé.
-     *
-     * @param row Ligne du siège.
-     * @param col Colonne du siège.
-     * @param type Type de siège.
-     * @return true si le siège peut être réservé, false sinon.
-     */
     private boolean canReserve(int row, int col, SeatType type) {
         if (row < 0 || row >= seatMap.length || col < 0 || col >= seatMap[0].length) {
             return false;
@@ -188,14 +170,6 @@ public class Seance implements Reservable {
         }
     }
 
-    /**
-     * Vérifie si un siège peut être libéré.
-     *
-     * @param row Ligne du siège.
-     * @param col Colonne du siège.
-     * @param type Type de siège.
-     * @return true si le siège peut être libéré, false sinon.
-     */
     private boolean canCancel(int row, int col, SeatType type) {
         if (row < 0 || row >= seatMap.length || col < 0 || col >= seatMap[0].length) {
             return false;
@@ -213,13 +187,6 @@ public class Seance implements Reservable {
         }
     }
 
-    /**
-     * Applique la réservation d'un siège.
-     *
-     * @param row Ligne du siège.
-     * @param col Colonne du siège.
-     * @param type Type de siège.
-     */
     private void applyReservation(int row, int col, SeatType type) {
         seatMap[row][col] = 'O';
         if (type == SeatType.DOUBLE) {
@@ -227,13 +194,6 @@ public class Seance implements Reservable {
         }
     }
 
-    /**
-     * Applique l'annulation d'un siège.
-     *
-     * @param row Ligne du siège.
-     * @param col Colonne du siège.
-     * @param type Type de siège.
-     */
     private void applyCancellation(int row, int col, SeatType type) {
         char[][] template = room.getRoomSeatMap();
         seatMap[row][col] = template[row][col];
@@ -242,11 +202,10 @@ public class Seance implements Reservable {
         }
     }
 
-    // Getters et Setters (inchangés)
-    public String getDate() { return this.date; }
-    public String getTime() { return this.time; }
-    public String getMovie() { return this.movie; }
-    public Room getRoom() { return this.room; }
-    public char[][] getSeatMap() { return this.seatMap; }
-    public ArrayList<Reservation> getReservations() { return this.reservations; }
+    public String getDate() { return date; }
+    public String getTime() { return time; }
+    public String getMovie() { return movie; }
+    public Room getRoom() { return room; }
+    public char[][] getSeatMap() { return seatMap; }
+    public ArrayList<Reservation> getReservations() { return new ArrayList<>(reservations); }
 }

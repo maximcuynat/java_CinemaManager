@@ -2,19 +2,20 @@ package com.cinema.cli;
 
 import com.cinema.models.*;
 import com.cinema.enums.SeatType;
+import com.cinema.utils.RoomBuilder;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class InteractiveCLI {
-    private Cinema cinema;
+    private ArrayList<Cinema> cinemas;
+    private Cinema currentCinema;
     private Scanner scanner;
 
     public InteractiveCLI() {
-        this.cinema = new Cinema("Pathé Plan de Campagne");
+        this.cinemas = new ArrayList<>();
+        this.currentCinema = null;
         this.scanner = new Scanner(System.in);
     }
 
-    // ==== AJOUT : Nettoyage de la console ====
     private void clearConsole() {
         try {
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -24,19 +25,123 @@ public class InteractiveCLI {
                 System.out.flush();
             }
         } catch (Exception e) {
-            // Méthode fallback : scroll
             for (int i = 0; i < 50; i++) System.out.println();
         }
     }
 
     public void start() {
         clearConsole();
-        System.out.println("=== Bienvenue dans le système de gestion de cinéma ===");
+        System.out.println("=== Bienvenue dans le système de gestion de cinémas ===");
 
         boolean running = true;
         while (running) {
             clearConsole();
-            displayMainMenu();
+            displayCinemaSelectionMenu();
+            int choice = getIntInput("Choisissez une option : ");
+
+            switch (choice) {
+                case 1:
+                    createCinema();
+                    break;
+                case 2:
+                    selectCinema();
+                    break;
+                case 3:
+                    listCinemas();
+                    waitForEnter();
+                    break;
+                case 0:
+                    if (confirmAction("Voulez-vous vraiment quitter ?")) {
+                        running = false;
+                        System.out.println("Au revoir !");
+                    }
+                    break;
+                default:
+                    System.out.println("Option invalide.");
+                    waitForEnter();
+            }
+        }
+    }
+
+    private void displayCinemaSelectionMenu() {
+        System.out.println("\n=== Menu Principal ===");
+        System.out.println("Cinémas enregistrés : " + cinemas.size());
+        if (currentCinema != null) {
+            System.out.println("Cinéma actuel : " + currentCinema.getName());
+        }
+        System.out.println("\n1. Créer un nouveau cinéma");
+        System.out.println("2. Sélectionner/Gérer un cinéma");
+        System.out.println("3. Afficher tous les cinémas");
+        System.out.println("0. Quitter");
+    }
+
+    private void createCinema() {
+        System.out.println("\n=== Créer un Nouveau Cinéma ===");
+        String name = getStringInput("Entrez le nom du cinéma : ");
+        if (name.trim().isEmpty()) {
+            System.out.println("Le nom ne peut pas être vide.");
+            waitForEnter();
+            return;
+        }
+
+        Cinema newCinema = new Cinema(name);
+        cinemas.add(newCinema);
+        currentCinema = newCinema;
+        System.out.println("Cinéma '" + name + "' créé avec succès !");
+        System.out.println("Vous êtes maintenant dans le cinéma : " + name);
+        waitForEnter();
+        manageCinema();
+    }
+
+    private void selectCinema() {
+        if (cinemas.isEmpty()) {
+            System.out.println("Aucun cinéma disponible. Veuillez d'abord créer un cinéma.");
+            waitForEnter();
+            return;
+        }
+
+        System.out.println("\n=== Sélectionner un Cinéma ===");
+        listCinemas();
+        int cinemaIndex = getIntInput("Sélectionnez un cinéma (entrez le numéro) : ") - 1;
+
+        if (cinemaIndex < 0 || cinemaIndex >= cinemas.size()) {
+            System.out.println("Numéro de cinéma invalide.");
+            waitForEnter();
+            return;
+        }
+
+        currentCinema = cinemas.get(cinemaIndex);
+        System.out.println("Vous avez sélectionné : " + currentCinema.getName());
+        waitForEnter();
+        manageCinema();
+    }
+
+    private void listCinemas() {
+        if (cinemas.isEmpty()) {
+            System.out.println("Aucun cinéma enregistré.");
+            return;
+        }
+
+        System.out.println("\n=== Liste des Cinémas ===");
+        for (int i = 0; i < cinemas.size(); i++) {
+            Cinema cinema = cinemas.get(i);
+            String indicator = (cinema == currentCinema) ? " (actuel)" : "";
+            System.out.println((i + 1) + ". " + cinema.getName() + indicator +
+                    " - " + cinema.getRooms().size() + " salle(s)");
+        }
+    }
+
+    private void manageCinema() {
+        if (currentCinema == null) {
+            System.out.println("Aucun cinéma sélectionné.");
+            waitForEnter();
+            return;
+        }
+
+        boolean managing = true;
+        while (managing) {
+            clearConsole();
+            displayCinemaManagementMenu();
             int choice = getIntInput("Choisissez une option : ");
 
             switch (choice) {
@@ -54,27 +159,33 @@ public class InteractiveCLI {
                     break;
                 case 5:
                     displaySeatMap();
+                    waitForEnter();
                     break;
                 case 6:
                     searchSeances();
+                    waitForEnter();
                     break;
                 case 7:
                     displayReservationHistory();
+                    waitForEnter();
+                    break;
+                case 8:
+                    displayCinemaInfo();
+                    waitForEnter();
                     break;
                 case 0:
-                    if (confirmAction("Voulez-vous vraiment quitter ? (Oui/Non)")) {
-                        running = false;
-                        System.out.println("Au revoir !");
-                    }
+                    managing = false;
+                    System.out.println("Retour au menu principal...");
                     break;
                 default:
                     System.out.println("Option invalide.");
+                    waitForEnter();
             }
         }
     }
 
-    private void displayMainMenu() {
-        System.out.println("\n=== Menu Principal ===");
+    private void displayCinemaManagementMenu() {
+        System.out.println("\n=== Gestion du Cinéma : " + currentCinema.getName() + " ===");
         System.out.println("1. Gérer les salles");
         System.out.println("2. Gérer les séances");
         System.out.println("3. Réserver un siège");
@@ -82,7 +193,21 @@ public class InteractiveCLI {
         System.out.println("5. Afficher la carte des sièges");
         System.out.println("6. Rechercher une séance");
         System.out.println("7. Historique des réservations");
-        System.out.println("0. Quitter");
+        System.out.println("8. Informations du cinéma");
+        System.out.println("0. Retour au menu principal");
+    }
+
+    private void displayCinemaInfo() {
+        System.out.println("\n=== Informations du Cinéma ===");
+        System.out.println("Nom : " + currentCinema.getName());
+        System.out.println("Nombre de salles : " + currentCinema.getRoomCount());
+        System.out.println("Nombre de séances : " + currentCinema.getTotalSeances());
+        System.out.println("Nombre de réservations : " + currentCinema.getTotalReservations());
+    }
+
+    private void waitForEnter() {
+        System.out.print("\nAppuyez sur Entrée pour continuer...");
+        scanner.nextLine();
     }
 
     private void manageRooms() {
@@ -99,18 +224,22 @@ public class InteractiveCLI {
             switch (choice) {
                 case 1:
                     createRoom();
+                    waitForEnter();
                     break;
                 case 2:
                     displayRooms();
+                    waitForEnter();
                     break;
                 case 3:
                     deleteRoom();
+                    waitForEnter();
                     break;
                 case 0:
                     back = true;
                     break;
                 default:
                     System.out.println("Option invalide.");
+                    waitForEnter();
             }
         }
     }
@@ -128,15 +257,18 @@ public class InteractiveCLI {
             switch (choice) {
                 case 1:
                     createSeance();
+                    waitForEnter();
                     break;
                 case 2:
                     displaySeances();
+                    waitForEnter();
                     break;
                 case 0:
                     back = true;
                     break;
                 default:
                     System.out.println("Option invalide.");
+                    waitForEnter();
             }
         }
     }
@@ -149,20 +281,70 @@ public class InteractiveCLI {
             return;
         }
 
-        Room room = new Room(name);
-        cinema.addRoom(room);
-        System.out.println("Salle '" + name + "' créée avec succès !");
+        System.out.println("\nType de salle :");
+        System.out.println("1. Salle simple (par défaut 5x10)");
+        System.out.println("2. Salle rectangulaire personnalisée");
+        System.out.println("3. Salle trapézoïdale (plus large au fond)");
+        System.out.println("4. Salle en arc (comme les vrais cinémas)");
+        System.out.println("5. Construction interactive (ligne par ligne)");
+
+        int choice = getIntInput("Choisissez le type : ");
+        Room room;
+
+        switch (choice) {
+            case 1:
+                room = new Room(name);
+                break;
+            case 2:
+                int rows = getIntInput("Nombre de rangées : ");
+                int cols = getIntInput("Nombre de colonnes : ");
+                char[][] rectLayout = RoomBuilder.createRectangular(rows, cols);
+                room = new Room(name, rectLayout);
+                break;
+            case 3:
+                int trapRows = getIntInput("Nombre de rangées : ");
+                int minWidth = getIntInput("Largeur minimale (devant) : ");
+                int maxWidth = getIntInput("Largeur maximale (fond) : ");
+                char[][] trapLayout = RoomBuilder.createTrapezoid(trapRows, minWidth, maxWidth);
+                room = new Room(name, trapLayout);
+                break;
+            case 4:
+                int arcRows = getIntInput("Nombre de rangées : ");
+                int centerWidth = getIntInput("Largeur centrale : ");
+                char[][] arcLayout = RoomBuilder.createArched(arcRows, centerWidth);
+                room = new Room(name, arcLayout);
+                break;
+            case 5:
+                RoomBuilder builder = new RoomBuilder();
+                builder.buildInteractive(scanner);
+                builder.preview();
+
+                if (confirmAction("Confirmer cette configuration ?")) {
+                    char[][] customLayout = builder.build();
+                    room = new Room(name, customLayout);
+                } else {
+                    System.out.println("Création annulée.");
+                    return;
+                }
+                break;
+            default:
+                System.out.println("Choix invalide, salle par défaut créée.");
+                room = new Room(name);
+        }
+
+        currentCinema.addRoom(room);
+        System.out.println("✓ Salle '" + name + "' créée avec succès !");
     }
 
     private void displayRooms() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
             return;
         }
 
         System.out.println("\n=== Liste des Salles ===");
         List<String[]> rows = new ArrayList<>();
-        for (Room room : cinema.getRooms()) {
+        for (Room room : currentCinema.getRooms()) {
             rows.add(new String[]{room.getName(), String.valueOf(room.getSeances().size())});
         }
 
@@ -170,27 +352,27 @@ public class InteractiveCLI {
     }
 
     private void deleteRoom() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
             return;
         }
 
         displayRooms();
         int roomIndex = getIntInput("Sélectionnez une salle à supprimer (entrez le numéro) : ") - 1;
-        if (roomIndex < 0 || roomIndex >= cinema.getRooms().size()) {
+        if (roomIndex < 0 || roomIndex >= currentCinema.getRooms().size()) {
             System.out.println("Numéro de salle invalide.");
             return;
         }
 
-        if (confirmAction("Voulez-vous vraiment supprimer cette salle ? (Oui/Non)")) {
-            Room room = cinema.getRooms().get(roomIndex);
-            cinema.getRooms().remove(roomIndex);
+        if (confirmAction("Voulez-vous vraiment supprimer cette salle ?")) {
+            Room room = currentCinema.getRooms().get(roomIndex);
+            currentCinema.removeRoom(room);
             System.out.println("Salle '" + room.getName() + "' supprimée avec succès !");
         }
     }
 
     private void createSeance() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible. Veuillez d'abord créer une salle.");
             return;
         }
@@ -198,12 +380,12 @@ public class InteractiveCLI {
         System.out.println("\n=== Créer une Séance ===");
         displayRooms();
         int roomIndex = getIntInput("Sélectionnez une salle (entrez le numéro) : ") - 1;
-        if (roomIndex < 0 || roomIndex >= cinema.getRooms().size()) {
+        if (roomIndex < 0 || roomIndex >= currentCinema.getRooms().size()) {
             System.out.println("Numéro de salle invalide.");
             return;
         }
 
-        Room selectedRoom = cinema.getRooms().get(roomIndex);
+        Room selectedRoom = currentCinema.getRooms().get(roomIndex);
         String date = getStringInput("Entrez la date de la séance (ex. 10/12/2025) : ");
         String time = getStringInput("Entrez l'heure de la séance (ex. 18h15) : ");
         String movie = getStringInput("Entrez le titre du film : ");
@@ -214,7 +396,7 @@ public class InteractiveCLI {
     }
 
     private void displaySeances() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
             return;
         }
@@ -222,7 +404,7 @@ public class InteractiveCLI {
         System.out.println("\n=== Liste des Séances ===");
         List<String[]> rows = new ArrayList<>();
         int seanceIndex = 1;
-        for (Room room : cinema.getRooms()) {
+        for (Room room : currentCinema.getRooms()) {
             for (Seance seance : room.getSeances()) {
                 rows.add(new String[]{
                         String.valueOf(seanceIndex++),
@@ -242,90 +424,158 @@ public class InteractiveCLI {
     }
 
     private void reserveSeat() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
+            waitForEnter();
             return;
         }
 
         System.out.println("\n=== Réserver un Siège ===");
         displaySeances();
         int seanceIndex = getIntInput("Sélectionnez une séance (entrez l'ID) : ") - 1;
-        if (seanceIndex < 0) {
-            System.out.println("ID de séance invalide.");
-            return;
-        }
 
-        List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
-
-        if (seanceIndex >= allSeances.size()) {
+        List<Seance> allSeances = getAllSeances();
+        if (seanceIndex < 0 || seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
+            waitForEnter();
             return;
         }
 
         Seance selectedSeance = allSeances.get(seanceIndex);
-        selectedSeance.displaySeatMap();
-        int row = getIntInput("Entrez la ligne du siège : ");
-        int col = getIntInput("Entrez la colonne du siège : ");
-        SeatType type = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+        int numberOfPeople = getIntInput("Combien de personnes pour cette réservation ? ");
 
-        Person person = createPerson();
-        Reservation reservation = new Reservation(person);
+        if (numberOfPeople < 1) {
+            System.out.println("Le nombre de personnes doit être au moins 1.");
+            waitForEnter();
+            return;
+        }
+
+        System.out.println("\n--- Personne principale (titulaire de la réservation) ---");
+        Person holder = createPerson();
+
+        selectedSeance.displaySeatMap();
+        int row = getIntInput("Entrez la ligne du siège pour " + holder.getFirstName() + " : ");
+        int col = getIntInput("Entrez la colonne du siège pour " + holder.getFirstName() + " : ");
+        SeatType type = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+        int[] holderSeat = new int[]{row, col};
 
         try {
-            selectedSeance.reserve(new int[]{row, col}, type);
+            selectedSeance.reserve(holderSeat, type);
+            holder.assignSeat(row, col);
+
+            Reservation reservation = new Reservation(holder);
+
+            for (int i = 2; i <= numberOfPeople; i++) {
+                System.out.println("\n--- Personne " + i + " ---");
+                Person additionalPerson = createPerson();
+
+                selectedSeance.displaySeatMap();
+                int additionalRow = getIntInput("Entrez la ligne du siège pour " + additionalPerson.getFirstName() + " : ");
+                int additionalCol = getIntInput("Entrez la colonne du siège pour " + additionalPerson.getFirstName() + " : ");
+                SeatType additionalType = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+                int[] additionalSeat = new int[]{additionalRow, additionalCol};
+
+                try {
+                    selectedSeance.reserve(additionalSeat, additionalType);
+                    reservation.addPersonToReservation(additionalPerson, additionalSeat);
+                    System.out.println("Siège réservé pour " + additionalPerson.getFullName() + " !");
+                } catch (Exception e) {
+                    System.out.println("Erreur pour " + additionalPerson.getFirstName() + " : " + e.getMessage());
+                }
+            }
+
             selectedSeance.addReservation(reservation);
-            System.out.println("Siège réservé avec succès pour " + person.getFirstName() + " " + person.getLastName() + " !");
+
+            System.out.println("\n=== Réservation complète ===");
+            System.out.println("Réservation #" + reservation.getId() + " créée avec succès !");
+            System.out.println("Titulaire : " + holder.getFullName());
+            if (reservation.getOthers().size() > 0) {
+                System.out.println("Invités : ");
+                for (Person guest : reservation.getOthers()) {
+                    System.out.println("  - " + guest.getFullName());
+                }
+            }
+            System.out.println("Sièges : " + reservation.getSeatString());
+
         } catch (Exception e) {
             System.out.println("Erreur : " + e.getMessage());
         }
+
+        waitForEnter();
     }
 
     private Person createPerson() {
-        System.out.println("\n=== Créer une Personne ===");
-        String lastName = getStringInput("Entrez le nom de famille : ");
         String firstName = getStringInput("Entrez le prénom : ");
-        return new Person(lastName, firstName);
+        String lastName = getStringInput("Entrez le nom de famille : ");
+        return new Person(firstName, lastName);
     }
 
     private void cancelReservation() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
+            waitForEnter();
             return;
         }
 
         System.out.println("\n=== Annuler une Réservation ===");
         displaySeances();
         int seanceIndex = getIntInput("Sélectionnez une séance (entrez l'ID) : ") - 1;
-        if (seanceIndex < 0) {
-            System.out.println("ID de séance invalide.");
-            return;
-        }
 
-        List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
-
-        if (seanceIndex >= allSeances.size()) {
+        List<Seance> allSeances = getAllSeances();
+        if (seanceIndex < 0 || seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
+            waitForEnter();
             return;
         }
 
         Seance selectedSeance = allSeances.get(seanceIndex);
-        selectedSeance.displaySeatMap();
-        int row = getIntInput("Entrez la ligne du siège à libérer : ");
-        int col = getIntInput("Entrez la colonne du siège à libérer : ");
-        SeatType type = getSeatTypeInput("Entrez le type de siège (NORMAL, PMR, DOUBLE) : ");
+
+        if (selectedSeance.getReservations().isEmpty()) {
+            System.out.println("Aucune réservation pour cette séance.");
+            waitForEnter();
+            return;
+        }
+
+        System.out.println("\n=== Réservations pour cette séance ===");
+        List<String[]> rows = new ArrayList<>();
+        for (Reservation reservation : selectedSeance.getReservations()) {
+            rows.add(new String[]{
+                    String.valueOf(reservation.getId()),
+                    reservation.getHolder().getFullName(),
+                    String.valueOf(reservation.getTotalPeople()),
+                    reservation.getSeatString()
+            });
+        }
+        displayTable(new String[]{"ID", "Titulaire", "Nb Pers.", "Sièges"}, rows);
+
+        int reservationId = getIntInput("Entrez l'ID de la réservation à annuler : ");
+
+        Reservation toCancel = null;
+        for (Reservation reservation : selectedSeance.getReservations()) {
+            if (reservation.getId() == reservationId) {
+                toCancel = reservation;
+                break;
+            }
+        }
+
+        if (toCancel == null) {
+            System.out.println("Réservation introuvable.");
+            waitForEnter();
+            return;
+        }
 
         try {
-            selectedSeance.cancel(new int[]{row, col}, type);
-            System.out.println("Réservation annulée avec succès !");
+            selectedSeance.cancelReservation(toCancel);
+            System.out.println("Réservation #" + reservationId + " annulée avec succès !");
         } catch (Exception e) {
-            System.out.println("Erreur : " + e.getMessage());
+            System.out.println("Erreur lors de l'annulation : " + e.getMessage());
         }
+
+        waitForEnter();
     }
 
     private void displaySeatMap() {
-        if (cinema.getRooms().isEmpty()) {
+        if (currentCinema.getRooms().isEmpty()) {
             System.out.println("Aucune salle disponible.");
             return;
         }
@@ -333,15 +583,9 @@ public class InteractiveCLI {
         System.out.println("\n=== Carte des Sièges ===");
         displaySeances();
         int seanceIndex = getIntInput("Sélectionnez une séance (entrez l'ID) : ") - 1;
-        if (seanceIndex < 0) {
-            System.out.println("ID de séance invalide.");
-            return;
-        }
 
-        List<Seance> allSeances = new ArrayList<>();
-        for (Room room : cinema.getRooms()) allSeances.addAll(room.getSeances());
-
-        if (seanceIndex >= allSeances.size()) {
+        List<Seance> allSeances = getAllSeances();
+        if (seanceIndex < 0 || seanceIndex >= allSeances.size()) {
             System.out.println("ID de séance invalide.");
             return;
         }
@@ -356,7 +600,7 @@ public class InteractiveCLI {
 
         List<String[]> rows = new ArrayList<>();
         int seanceIndex = 1;
-        for (Room room : cinema.getRooms()) {
+        for (Room room : currentCinema.getRooms()) {
             for (Seance seance : room.getSeances()) {
                 if (query.isEmpty() || seance.getMovie().toLowerCase().contains(query.toLowerCase())) {
                     rows.add(new String[]{
@@ -381,14 +625,25 @@ public class InteractiveCLI {
         System.out.println("\n=== Historique des Réservations ===");
 
         List<String[]> rows = new ArrayList<>();
-        for (Room room : cinema.getRooms()) {
+        for (Room room : currentCinema.getRooms()) {
             for (Seance seance : room.getSeances()) {
                 for (Reservation reservation : seance.getReservations()) {
+                    StringBuilder names = new StringBuilder();
+                    names.append(reservation.getHolder().getFullName()).append(" (Titulaire)");
+
+                    if (!reservation.getOthers().isEmpty()) {
+                        for (Person guest : reservation.getOthers()) {
+                            names.append(", ").append(guest.getFullName());
+                        }
+                    }
+
                     rows.add(new String[]{
+                            String.valueOf(reservation.getId()),
                             seance.getMovie(),
                             seance.getDate() + " " + seance.getTime(),
                             room.getName(),
-                            reservation.getHolder().getFirstName() + " " + reservation.getHolder().getLastName(),
+                            String.valueOf(reservation.getTotalPeople()),
+                            names.toString(),
                             reservation.getSeatString()
                     });
                 }
@@ -398,8 +653,16 @@ public class InteractiveCLI {
         if (rows.isEmpty()) {
             System.out.println("Aucune réservation trouvée.");
         } else {
-            displayTable(new String[]{"Film", "Date et Heure", "Salle", "Nom", "Siège"}, rows);
+            displayTable(new String[]{"ID Rés.", "Film", "Date et Heure", "Salle", "Nb Pers.", "Noms", "Sièges"}, rows);
         }
+    }
+
+    private List<Seance> getAllSeances() {
+        List<Seance> allSeances = new ArrayList<>();
+        for (Room room : currentCinema.getRooms()) {
+            allSeances.addAll(room.getSeances());
+        }
+        return allSeances;
     }
 
     private void displayTable(String[] headers, List<String[]> rows) {

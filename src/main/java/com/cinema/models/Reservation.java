@@ -4,68 +4,84 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Reservation {
-    private int idReservation;
+    private static int nextId = 1;
+    private final int id;
     private Person holder;
     private ArrayList<Person> others;
 
     public Reservation(Person holder) {
-        setHolder(holder);
+        if (holder == null) {
+            throw new IllegalArgumentException("Le titulaire ne peut pas être null");
+        }
+        this.id = nextId++;
+        this.holder = holder;
         this.others = new ArrayList<>();
     }
 
     public Reservation(Person holder, ArrayList<Person> others) {
-        setHolder(holder);
-        this.others = others;
+        if (holder == null) {
+            throw new IllegalArgumentException("Le titulaire ne peut pas être null");
+        }
+        this.id = nextId++;
+        this.holder = holder;
+        this.others = others != null ? new ArrayList<>(others) : new ArrayList<>();
     }
 
-    public void addPersonToReservation(Person person, int[] seat, boolean isPmr) {
-        person.saveSeat(seat);
-        this.others.add(person);
+    public void addPersonToReservation(Person person, int[] seat) {
+        if (person == null) {
+            throw new IllegalArgumentException("La personne ne peut pas être null");
+        }
+        if (seat == null || seat.length != 2) {
+            throw new IllegalArgumentException("Le siège doit être un tableau de 2 entiers");
+        }
+        person.assignSeat(seat[0], seat[1]);
+        others.add(person);
     }
 
-    // Méthode pour obtenir tous les sièges de la réservation
     public ArrayList<int[]> getSeats() {
         ArrayList<int[]> seats = new ArrayList<>();
-        seats.add(holder.getSeat());
+        if (holder.hasAssignedSeat()) {
+            seats.add(holder.getSeat());
+        }
         for (Person person : others) {
-            seats.add(person.getSeat());
+            if (person.hasAssignedSeat()) {
+                seats.add(person.getSeat());
+            }
         }
         return seats;
     }
 
-    // Méthode pour obtenir les sièges sous forme de chaîne
     public String getSeatString() {
         StringBuilder seatString = new StringBuilder();
         for (int[] seat : getSeats()) {
-            seatString.append(Arrays.toString(seat)).append(", ");
+            seatString.append("[").append(seat[0]).append(",").append(seat[1]).append("], ");
         }
-        if (!getSeats().isEmpty()) {
-            seatString.setLength(seatString.length() - 2); // Supprime la dernière virgule
+        if (seatString.length() > 0) {
+            seatString.setLength(seatString.length() - 2);
         }
         return seatString.toString();
     }
 
-    private void setIdReservation(int id) {
-        this.idReservation = id;
+    public int getTotalPeople() {
+        return 1 + others.size();
     }
 
-    private void setHolder(Person holder) {
-        this.holder = holder;
+    public ArrayList<Person> getAllPeople() {
+        ArrayList<Person> allPeople = new ArrayList<>();
+        allPeople.add(holder);
+        allPeople.addAll(others);
+        return allPeople;
     }
 
-    private void setOthers(ArrayList<Person> others) {
-        this.others = others;
-    }
-
-    public int getIdReservation() {
-        return this.idReservation;
+    public int getId() {
+        return id;
     }
 
     public Person getHolder() {
-        return this.holder;
+        return holder;
     }
 
     public ArrayList<Person> getOthers() {
-        return this.others;
+        return new ArrayList<>(others);
     }
 }
