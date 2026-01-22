@@ -3,57 +3,57 @@ package com.cinema.models;
 public class Person {
     private String firstName;
     private String lastName;
-    private int[] place = new int[2];
+    private int[] seat;
 
     public Person() {
         this.firstName = "";
         this.lastName = "";
+        this.seat = null;
     }
 
     public Person(String firstName, String lastName) {
-        this.setFirstName(firstName);
-        this.setLastName(lastName);
+        setFirstName(firstName);
+        setLastName(lastName);
+        this.seat = null;
     }
 
-    public void saveSeat(int[] seat) {
-        this.place[0] = seat[0];
-        this.place[1] = seat[1];
+    public void assignSeat(int row, int col) {
+        this.seat = new int[]{row, col};
     }
 
-    private void setFirstName(String firstName) {
-        if (!firstName.isEmpty()) {
-            this.firstName = firstName;
-        } else {
-            this.firstName = "No firstname";
-        }
+    public void clearSeat() {
+        this.seat = null;
     }
 
-    private void setLastName(String lastName) {
-        if (!lastName.isEmpty()) {
-            this.lastName = lastName;
-        } else {
-            this.lastName = "No lastName";
-        }
+    public boolean hasAssignedSeat() {
+        return seat != null;
     }
 
-    public String getPerson() {
-        return this.firstName + " - " + this.lastName;
+    public void setFirstName(String firstName) {
+        this.firstName = (firstName != null && !firstName.trim().isEmpty())
+                ? firstName.trim()
+                : "No firstname";
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = (lastName != null && !lastName.trim().isEmpty())
+                ? lastName.trim()
+                : "No lastName";
+    }
+
+    public String getFullName() {
+        return firstName + " " + lastName;
     }
 
     public String getFirstName() {
-        return this.firstName;
+        return firstName;
     }
 
     public String getLastName() {
-        return this.lastName;
+        return lastName;
     }
 
-    public int[] getPlace() {
-        return this.place;
-    }
-
-    // Ajoutez cette méthode pour obtenir le siège
     public int[] getSeat() {
-        return this.place;
+        return seat != null ? seat.clone() : null;
     }
 }
